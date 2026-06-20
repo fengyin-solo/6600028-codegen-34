@@ -45,6 +45,14 @@ export const PRESETS: Preset[] = [
     particleCount: 900,
     initialConfig: 'wave',
   },
+  {
+    name: 'vortex',
+    label: '涡旋实验',
+    description: '平静水池，使用涡旋发生器制造旋转扰动',
+    params: { gravity: 4.0, viscosity: 0.3, gasConstant: 2000, smoothingRadius: 14 },
+    particleCount: 1000,
+    initialConfig: 'pool',
+  },
 ]
 
 // SPH Kernel constants
@@ -88,8 +96,8 @@ export class SPHEngine {
     this.cellSize = this.params.smoothingRadius
   }
 
-  initParticles(config: 'dam' | 'drop' | 'fountain' | 'wave', count?: number) {
-    const n = count ?? this.particles.length || 800
+  initParticles(config: 'dam' | 'drop' | 'fountain' | 'wave' | 'pool', count?: number) {
+    const n = count ?? (this.particles.length || 800)
     this.particles = []
 
     switch (config) {
@@ -174,6 +182,27 @@ export class SPHEngine {
           this.particles.push(this.createParticle(
             Math.random() * this.width * 0.8 + this.width * 0.1,
             Math.random() * this.height * 0.4 + this.height * 0.3
+          ))
+        }
+        break
+      }
+      case 'pool': {
+        const spacing = 7
+        const cols = Math.floor((this.width - 40) / spacing)
+        const rows = Math.floor(n / cols)
+        let placed = 0
+        for (let j = 0; j < rows && placed < n; j++) {
+          for (let i = 0; i < cols && placed < n; i++) {
+            const x = 20 + i * spacing + (Math.random() - 0.5) * 1.5
+            const y = this.height - 20 - j * spacing + (Math.random() - 0.5) * 1.5
+            this.particles.push(this.createParticle(x, y))
+            placed++
+          }
+        }
+        while (this.particles.length < n) {
+          this.particles.push(this.createParticle(
+            20 + Math.random() * (this.width - 40),
+            this.height - 20 - Math.random() * (rows * spacing)
           ))
         }
         break
@@ -322,6 +351,55 @@ export class SPHEngine {
         const factor = strength * (1 - dist / radius)
         p.vx += (dx / dist) * factor
         p.vy += (dy / dist) * factor
+      }
+    }
+  }
+
+  applyVortex(
+    cx: number,
+    cy: number,
+    strength: number,
+    radius: number,
+    clockwise: boolean = true
+  ) {
+    const dir = clockwise ? 1 : -1
+    for (const p of this.particles) {
+      const dx = p.x - cx
+      const dy = p.y - cy
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < radius && dist > 0.1) {
+        const t = dist / radius
+        const falloff = 1 - t * t
+        const speed = strength * falloff
+        const tx = -dy / dist
+        const ty = dx / dist
+        p.vx += tx * speed * dir
+        p.vy += ty * speed * dir
+      }
+    }
+  }
+
+  applyVortexDrag(
+    cx: number,
+    cy: number,
+    strength: number,
+    radius: number,
+    clockwise: boolean,
+    dt: number
+  ) {
+    const dir = clockwise ? 1 : -1
+    for (const p of this.particles) {
+      const dx = p.x - cx
+      const dy = p.y - cy
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < radius && dist > 0.1) {
+        const t = dist / radius
+        const falloff = 1 - t * t
+        const accel = strength * falloff * 10
+        const tx = -dy / dist
+        const ty = dx / dist
+        p.vx += tx * accel * dir * dt
+        p.vy += ty * accel * dir * dt
       }
     }
   }

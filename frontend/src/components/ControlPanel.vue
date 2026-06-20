@@ -40,6 +40,22 @@ function onParticleCount(e: Event) {
 function onDt(e: Event) {
   store.updateParam('dt', parseFloat((e.target as HTMLInputElement).value))
 }
+
+function setMode(mode: 'impulse' | 'vortex') {
+  store.setInteractionMode(mode)
+}
+
+function onVortexStrength(e: Event) {
+  store.setVortexStrength(parseFloat((e.target as HTMLInputElement).value))
+}
+
+function onVortexRadius(e: Event) {
+  store.setVortexRadius(parseFloat((e.target as HTMLInputElement).value))
+}
+
+function toggleDirection() {
+  store.toggleVortexDirection()
+}
 </script>
 
 <template>
@@ -157,6 +173,81 @@ function onDt(e: Event) {
           @input="onDt"
           class="w-full accent-blue-500 h-1.5"
         />
+      </div>
+    </div>
+
+    <!-- Vortex Generator -->
+    <div class="space-y-3">
+      <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">涡旋发生器</h3>
+
+      <!-- Mode Toggle -->
+      <div class="flex gap-1">
+        <button
+          @click="setMode('impulse')"
+          class="flex-1 py-1.5 rounded text-xs font-medium transition"
+          :class="store.interactionMode === 'impulse'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+        >
+          冲量模式
+        </button>
+        <button
+          @click="setMode('vortex')"
+          class="flex-1 py-1.5 rounded text-xs font-medium transition"
+          :class="store.interactionMode === 'vortex'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+        >
+          涡旋模式
+        </button>
+      </div>
+
+      <div v-show="store.interactionMode === 'vortex'" class="space-y-3">
+        <!-- Vortex Strength -->
+        <div>
+          <label class="flex justify-between text-xs text-gray-400 mb-1">
+            <span>涡旋强度</span>
+            <span class="text-gray-300">{{ store.vortexStrength }}</span>
+          </label>
+          <input
+            type="range" min="10" max="500" step="10"
+            :value="store.vortexStrength"
+            @input="onVortexStrength"
+            class="w-full accent-purple-500 h-1.5"
+          />
+        </div>
+
+        <!-- Vortex Radius -->
+        <div>
+          <label class="flex justify-between text-xs text-gray-400 mb-1">
+            <span>涡旋半径</span>
+            <span class="text-gray-300">{{ store.vortexRadius }}px</span>
+          </label>
+          <input
+            type="range" min="30" max="250" step="10"
+            :value="store.vortexRadius"
+            @input="onVortexRadius"
+            class="w-full accent-purple-500 h-1.5"
+          />
+        </div>
+
+        <!-- Rotation Direction -->
+        <div>
+          <label class="flex justify-between text-xs text-gray-400 mb-1">
+            <span>旋转方向</span>
+            <span class="text-gray-300">{{ store.vortexClockwise ? '顺时针' : '逆时针' }}</span>
+          </label>
+          <button
+            @click="toggleDirection"
+            class="w-full py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition"
+          >
+            切换方向 ↻
+          </button>
+        </div>
+
+        <p class="text-xs text-gray-600">
+          点击画布施加瞬时涡旋，按住拖拽持续产生旋转力
+        </p>
       </div>
     </div>
 

@@ -27,5 +27,5 @@ export interface Preset {
   description: string;
   params: Partial<SimParams>;
   particleCount: number;
-  initialConfig: 'dam' | 'drop' | 'fountain' | 'wave';
+  initialConfig: 'dam' | 'drop' | 'fountain' | 'wave' | 'pool';
 }

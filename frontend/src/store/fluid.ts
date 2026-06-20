@@ -15,6 +15,13 @@ export const useFluidStore = defineStore('fluid', {
     _lastTime: 0,
     _fpsAccum: 0,
     _fpsFrames: 0,
+    interactionMode: 'impulse' as 'impulse' | 'vortex',
+    vortexStrength: 150,
+    vortexRadius: 100,
+    vortexClockwise: true,
+    vortexActive: false,
+    vortexX: 0,
+    vortexY: 0,
   }),
   getters: {
     particleArray: (state) => state.engine?.particles ?? [],
@@ -61,6 +68,7 @@ export const useFluidStore = defineStore('fluid', {
         // Sub-steps for stability
         const subSteps = 3
         for (let s = 0; s < subSteps; s++) {
+          this._applyVortexDrag()
           this.engine.step()
         }
         this.frameCount++
@@ -95,6 +103,47 @@ export const useFluidStore = defineStore('fluid', {
           this.engine['cellSize'] = value
         }
       }
+    },
+    setInteractionMode(mode: 'impulse' | 'vortex') {
+      this.interactionMode = mode
+    },
+    setVortexStrength(value: number) {
+      this.vortexStrength = value
+    },
+    setVortexRadius(value: number) {
+      this.vortexRadius = value
+    },
+    toggleVortexDirection() {
+      this.vortexClockwise = !this.vortexClockwise
+    },
+    applyVortex(x: number, y: number) {
+      if (!this.engine) return
+      this.engine.applyVortex(x, y, this.vortexStrength, this.vortexRadius, this.vortexClockwise)
+    },
+    startVortex(x: number, y: number) {
+      this.vortexActive = true
+      this.vortexX = x
+      this.vortexY = y
+    },
+    updateVortexPosition(x: number, y: number) {
+      this.vortexX = x
+      this.vortexY = y
+    },
+    stopVortex() {
+      this.vortexActive = false
+    },
+    _applyVortexDrag() {
+      if (!this.engine || !this.vortexActive) return
+      const subSteps = 3
+      const dt = this.params.dt / subSteps
+      this.engine.applyVortexDrag(
+        this.vortexX,
+        this.vortexY,
+        this.vortexStrength,
+        this.vortexRadius,
+        this.vortexClockwise,
+        dt
+      )
     },
   },
 })
